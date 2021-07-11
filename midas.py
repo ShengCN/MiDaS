@@ -116,10 +116,15 @@ def run(csv_path, output_path, model_path, model_type="large", optimize=True):
     for ind, v in tqdm(input_df.iterrows(), total=len(input_df), desc='MiDaS'):
         
         img_name = input_df.at[ind, 'rgb']
-        # print("  processing {} ({}/{})".format(img_name, ind + 1, num_images))
+        # output
+        filename = os.path.join(
+            output_path, '{}_midas'.format(os.path.splitext(os.path.basename(img_name))[0])
+        )
+        input_df.at[ind, 'midas'] = os.path.relpath(filename, root) + '.png'
+        if os.path.exists(filename + '.png'):
+            continue
 
         # input
-
         img = utils.read_image(join(root, img_name))
         img_input = transform({"image": img})["image"]
 
@@ -142,12 +147,7 @@ def run(csv_path, output_path, model_path, model_type="large", optimize=True):
                 .numpy()
             )
 
-        # output
-        filename = os.path.join(
-            output_path, '{}_midas'.format(os.path.splitext(os.path.basename(img_name))[0])
-        )
         utils.write_depth(filename, prediction, bits=2)
-        input_df.at[ind, 'midas'] = os.path.relpath(filename, root) + '.png'
 
     input_df.to_csv(csv_path, index=False)
     print("finished")
